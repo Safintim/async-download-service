@@ -27,6 +27,7 @@ async def archivate(request):
     response.headers['Content-Disposition'] = 'attachment; filename={}'.format(config['ARCHIVE_NAME'])
 
     await response.prepare(request)
+    response.enable_chunked_encoding()
 
     proc = await asyncio.create_subprocess_shell(
         TEMPLATE_COMMAND.format(path),
