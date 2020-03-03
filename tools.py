@@ -29,8 +29,9 @@ def get_config_from_file(path=CONFIG_PATH):
 
 
 def setup_config(config_from_cli):
-    config_from_path = get_config_from_file()
+    config_from_file = get_config_from_file()
+
     for key, value in config_from_cli.items():
         if value:
-            config_from_path[key] = value
-    return config_from_path
+            config_from_file[key] = value
+    return config_from_file
