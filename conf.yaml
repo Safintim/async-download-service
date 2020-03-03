@@ -1,0 +1,4 @@
+RESPONSE_DELAY: 0
+FILES_DIR: test_photos
+ARCHIVE_NAME: archive.zip
+LOGGING: False
