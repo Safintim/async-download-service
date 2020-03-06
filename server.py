@@ -8,7 +8,6 @@ import tools
 
 
 zip_cmd = ['zip', '-', '-r']
-kill_pid_cmd = ['kill', '-9']
 logger = logging.getLogger(__name__)
 
 
@@ -32,7 +31,6 @@ async def archivate(request):
         stdout=asyncio.subprocess.PIPE
     )
 
-    kill_pid_cmd.append(str(zip_proc.pid))
     try:
         while True:
             archive_chunc = await zip_proc.stdout.readline()
@@ -46,7 +44,7 @@ async def archivate(request):
         logger.info('Download was interrupted')
         raise
     finally:
-        await asyncio.create_subprocess_exec(*kill_pid_cmd)
+        zip_proc.kill()
         response.force_close()
 
     return response
