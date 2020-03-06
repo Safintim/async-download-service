@@ -40,8 +40,6 @@ async def archivate(request):
             await response.write(archive_chunc)
 
             logger.info('Sending archive chunk ...')
-            # print('Sending archive chunk ... NOT')
-
             await asyncio.sleep(int(config['RESPONSE_DELAY']))
     except (asyncio.CancelledError, ConnectionResetError):
         logger.info('Download was interrupted')
@@ -68,7 +66,6 @@ if __name__ == '__main__':
         web.get('/', handle_index_page),
         web.get('/archive/{archive_hash}/', archivate),
     ])
-
     app['config'] = tools.setup_config(namespace.__dict__)
 
     formatter = logging.Formatter('%(filename)s[LINE:%(lineno)d]# %(levelname)-8s [%(asctime)s]  %(message)s')
@@ -78,4 +75,5 @@ if __name__ == '__main__':
     logger.addHandler(handler)
     if app['config']['LOGGING']:
         logger.setLevel(level=logging.DEBUG)
+
     web.run_app(app)
