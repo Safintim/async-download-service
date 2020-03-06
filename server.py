@@ -7,7 +7,8 @@ from aiohttp import web
 import tools
 
 
-TEMPLATE_COMMAND = 'zip - -r {}'
+zip_cmd = ['zip', '-', '-r']
+kill_pid_cmd = ['kill', '-9']
 logger = logging.getLogger(__name__)
 
 
@@ -25,13 +26,13 @@ async def archivate(request):
     await response.prepare(request)
     response.enable_chunked_encoding()
 
-    zip_proc = await asyncio.create_subprocess_shell(
-        TEMPLATE_COMMAND.format(path),
+    zip_cmd.append(path)
+    zip_proc = await asyncio.create_subprocess_exec(
+        *zip_cmd,
         stdout=asyncio.subprocess.PIPE
     )
 
-    kill_pid_cmd = ['kill', '-9', str(zip_proc.pid)]
-
+    kill_pid_cmd.append(str(zip_proc.pid))
     try:
         while True:
             archive_chunc = await zip_proc.stdout.readline()
