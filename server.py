@@ -8,11 +8,7 @@ import tools
 
 
 TEMPLATE_COMMAND = 'zip - -r {}'
-
-
-logging.basicConfig(
-    format='%(filename)s[LINE:%(lineno)d]# %(levelname)-8s [%(asctime)s]  %(message)s',
-    level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 async def archivate(request):
@@ -29,29 +25,29 @@ async def archivate(request):
     await response.prepare(request)
     response.enable_chunked_encoding()
 
-    proc = await asyncio.create_subprocess_shell(
+    zip_proc = await asyncio.create_subprocess_shell(
         TEMPLATE_COMMAND.format(path),
         stdout=asyncio.subprocess.PIPE
     )
 
+    kill_pid_cmd = ['kill', '-9', str(zip_proc.pid)]
+
     try:
         while True:
-            archive_chunc = await proc.stdout.readline()
+            archive_chunc = await zip_proc.stdout.readline()
             if not archive_chunc:
                 break
-
             await response.write(archive_chunc)
 
-            if config['LOGGING']:
-                logging.info('Sending archive chunk ...')
+            logger.info('Sending archive chunk ...')
+            # print('Sending archive chunk ... NOT')
 
             await asyncio.sleep(int(config['RESPONSE_DELAY']))
     except (asyncio.CancelledError, ConnectionResetError):
-        if config['LOGGING']:
-            logging.info('Download was interrupted')
-        proc.kill()
+        logger.info('Download was interrupted')
         raise
     finally:
+        await asyncio.create_subprocess_exec(*kill_pid_cmd)
         response.force_close()
 
     return response
@@ -68,9 +64,18 @@ if __name__ == '__main__':
     namespace = parser.parse_args()
 
     app = web.Application()
-    app['config'] = tools.setup_config(namespace.__dict__)
     app.add_routes([
         web.get('/', handle_index_page),
         web.get('/archive/{archive_hash}/', archivate),
     ])
+
+    app['config'] = tools.setup_config(namespace.__dict__)
+
+    formatter = logging.Formatter('%(filename)s[LINE:%(lineno)d]# %(levelname)-8s [%(asctime)s]  %(message)s')
+    handler = logging.StreamHandler()
+    handler.setFormatter(formatter)
+    logger.setLevel(level=logging.WARN)
+    logger.addHandler(handler)
+    if app['config']['LOGGING']:
+        logger.setLevel(level=logging.DEBUG)
     web.run_app(app)
